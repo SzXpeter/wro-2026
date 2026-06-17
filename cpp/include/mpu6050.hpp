@@ -24,10 +24,10 @@ public:
     Vec3   readGyro();    // degrees/s (bias-corrected after calibrate())
     double readTemp();    // Celsius
 
-    // Integrates gyro Z-axis. Call in a tight loop or from a timer thread.
+    // Integrates gyro X-axis. Call in a tight loop or from a timer thread.
     void   update();
-    double getAngleZ()  const { return angleZ_; }
-    void   resetAngleZ()      { angleZ_ = 0.0; }
+    double getAngleX()  const { return angleX_; }
+    void   resetAngleX()      { angleX_ = 0.0; }
 
 private:
     int    fd_;
@@ -35,7 +35,7 @@ private:
     double accelScale_;
 
     Vec3   gyroBias_{};
-    double angleZ_ = 0.0;
+    double angleX_ = 0.0;
 
     using Clock = std::chrono::steady_clock;
     Clock::time_point lastTime_{};

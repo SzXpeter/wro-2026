@@ -9,10 +9,14 @@ from framecolors import process_image
 
 _robot_lib_path = os.path.join(os.path.dirname(__file__), 'lib', 'librobot.so')
 _robot = ctypes.CDLL(_robot_lib_path)
-_robot.robot_move_forward.argtypes = [ctypes.c_double, ctypes.c_double]
+_robot.robot_move_forward.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
 _robot.robot_move_forward.restype  = None
-_robot.robot_turn.argtypes = [ctypes.c_double, ctypes.c_double]
+_robot.robot_turn.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
 _robot.robot_turn.restype  = None
+_robot.robot_turn_gyro.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+_robot.robot_turn_gyro.restype  = None
+_robot.robot_move_straight_gyro.argtypes = [ctypes.c_double, ctypes.c_double]
+_robot.robot_move_straight_gyro.restype  = None
 _robot.get_gyro_angle.argtypes = []
 _robot.get_gyro_angle.restype  = ctypes.c_double
 _robot.reset_gyro.argtypes = []
@@ -21,7 +25,7 @@ _robot.reset_gyro.restype = None
 wheel_diameter = 5.6
 wheel_circumference = wheel_diameter * math.pi
 
-def move(distance: float, speed: float = 20) -> None:
+def move(distance: float, speed: float = 20, detachThread: bool = False) -> None:
     """
     Moves the robot forwards or backwards by cm.
 
@@ -32,9 +36,9 @@ def move(distance: float, speed: float = 20) -> None:
     speed: float
         The speed the robot moves in cm/s
     """
-    _robot.robot_move_forward(speed / wheel_circumference * 3200, distance / wheel_circumference * 3200)
+    _robot.robot_move_forward(speed / wheel_circumference * 3200, distance / wheel_circumference * 3200, detachThread)
 
-def turn(angle: float, speed: float = 10) -> None:
+def turn(angle: float, speed: float = 10, detachThread: bool = False) -> None:
     """
     Turns the robot by the given degrees without using a gyrosensor.
 
@@ -45,7 +49,33 @@ def turn(angle: float, speed: float = 10) -> None:
     speed: float
         The speed the robot turns by in cm/s
     """
-    _robot.robot_turn(speed / wheel_circumference * 3200, angle)
+    _robot.robot_turn(speed / wheel_circumference * 3200, angle, detachThread)
+
+def move_straight_gyro(distance: float, speed: float = 20) -> None:
+    """
+    Moves the robot forwards or backwards by cm using the gyrosensor.
+
+    params
+    ----------
+    distance: float
+        The distance the robot moves in centimeter. If negative the robot moves backwards
+    speed: float
+        The speed the robot moves in cm/s
+    """
+    _robot.robot_move_straight_gyro(speed / wheel_circumference * 3200, distance / wheel_circumference * 3200)
+
+def turn_gyro(angle: float, speed: float = 10, detachThread: bool = False) -> None:
+    """
+    Turns the robot by the given degrees using the gyrosensor.
+
+    params
+    ----------
+    angle: float
+        The degrees the robot turns by. Positive values turn the robot right, negative values turn it left
+    speed: float
+        The speed the robot turns by in cm/s
+    """
+    _robot.robot_turn_gyro(speed / wheel_circumference * 3200, angle, detachThread)
 
 def gyro_angle() -> float:
     return _robot.get_gyro_angle()
@@ -53,9 +83,8 @@ def gyro_angle() -> float:
 def reset_gyro() -> None:
     _robot.reset_gyro()
 
-for i in range(600):
-    print(gyro_angle())
-    time.sleep(.1)
+move_straight_gyro(30, 20)
+time.sleep(.5)
 
 '''
 image_path = os.path.join(os.path.dirname(__file__), 'capture.jpg')

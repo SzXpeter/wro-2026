@@ -25,6 +25,7 @@ StepperMotor::StepperMotor(int stepPin, int dirPin, int enablePin, int microstep
 }
 
 StepperMotor::~StepperMotor() {
+    stopContinuous();
     disable();
 }
 
@@ -39,10 +40,14 @@ void StepperMotor::disable() {
 }
 
 void StepperMotor::pulse() {
+    ++stepCount_;
     digitalWrite(stepPin_, HIGH);
     delayMicroseconds(PULSE_US);
     digitalWrite(stepPin_, LOW);
 }
+
+long StepperMotor::getStepCount() const { return stepCount_.load(); }
+void StepperMotor::resetStepCount()     { stepCount_.store(0); }
 
 void StepperMotor::move(int steps, double stepsPerSecond) {
     if (steps == 0 || stepsPerSecond <= 0.0)
@@ -51,7 +56,7 @@ void StepperMotor::move(int steps, double stepsPerSecond) {
     digitalWrite(dirPin_, steps < 0 ? HIGH : LOW);
     delayMicroseconds(DIR_SETUP_US);
 
-    int absSteps = std::abs(steps);
+    int absSteps = (steps < 0) ? -steps : steps;
     unsigned int periodUs = static_cast<unsigned int>(1'000'000.0 / stepsPerSecond);
     int delayUs    = (periodUs > PULSE_US) ? (periodUs - PULSE_US) : 1u;
 
@@ -80,5 +85,51 @@ void StepperMotor::move(int steps, double stepsPerSecond) {
         }
         rampSpeed /= 1.5;
     }
-    
+}
+
+void StepperMotor::startContinuous(double stepsPerSecond = 3200.0) {
+    if (running_) return;
+    setContinuousSpeed(stepsPerSecond);
+    running_ = true;
+    continuousThread_ = std::thread(&StepperMotor::continuousLoop, this);
+}
+
+void StepperMotor::stopContinuous() {
+    running_ = false;
+    if (continuousThread_.joinable())
+        continuousThread_.join();
+}
+
+void StepperMotor::setContinuousSpeed(double stepsPerSecond) {
+    continuousSpeed_.store(stepsPerSecond);
+}
+
+void StepperMotor::continuousLoop() {
+    bool lastDir = true;
+    bool dirInitialized = false;
+
+    while (running_) {
+        double speed = continuousSpeed_.load();
+
+        if (speed == 0.0) {
+            delayMicroseconds(1000);
+            continue;
+        }
+
+        bool forward = speed > 0.0;
+        double absSpeed = std::abs(speed);
+
+        if (!dirInitialized || forward != lastDir) {
+            digitalWrite(dirPin_, forward ? LOW : HIGH);
+            delayMicroseconds(DIR_SETUP_US);
+            lastDir = forward;
+            dirInitialized = true;
+        }
+
+        unsigned int periodUs = static_cast<unsigned int>(1'000'000.0 / absSpeed);
+        unsigned int delayUs  = (periodUs > PULSE_US) ? (periodUs - PULSE_US) : 1u;
+
+        pulse();
+        delayMicroseconds(delayUs);
+    }
 }
