@@ -1,93 +1,46 @@
-import ctypes
-import math
+import sys
 import os
 import threading
 import time
 import cv2
-
+import RPi.GPIO as GPIO
 from framecolors import process_image
+from robot import Robot
+BUTTON_PIN = 27  
 
-_robot_lib_path = os.path.join(os.path.dirname(__file__), 'lib', 'librobot.so')
-_robot = ctypes.CDLL(_robot_lib_path)
-_robot.robot_move_forward.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
-_robot.robot_move_forward.restype  = None
-_robot.robot_turn.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
-_robot.robot_turn.restype  = None
-_robot.robot_turn_gyro.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
-_robot.robot_turn_gyro.restype  = None
-_robot.robot_move_straight_gyro.argtypes = [ctypes.c_double, ctypes.c_double]
-_robot.robot_move_straight_gyro.restype  = None
-_robot.get_gyro_angle.argtypes = []
-_robot.get_gyro_angle.restype  = ctypes.c_double
-_robot.reset_gyro.argtypes = []
-_robot.reset_gyro.restype = None
 
-wheel_diameter = 5.6
-wheel_circumference = wheel_diameter * math.pi
+robot = Robot()
 
-def move(distance: float, speed: float = 20, detachThread: bool = False) -> None:
-    """
-    Moves the robot forwards or backwards by cm.
+def wait_for_button_press():
+    print("gombra várva...")
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    while GPIO.input(BUTTON_PIN) != GPIO.LOW:
+        pass
+    print("Megnyomva")
 
-    params
-    ----------
-    distance: float
-        The distance the robot moves in centimeter. If negative the robot moves backwards
-    speed: float
-        The speed the robot moves in cm/s
-    """
-    _robot.robot_move_forward(speed / wheel_circumference * 3200, distance / wheel_circumference * 3200, detachThread)
+wait_for_button_press()
+cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print("Hiba: nem sikerült megnyitni a kamerát!")
+    exit()
 
-def turn(angle: float, speed: float = 10, detachThread: bool = False) -> None:
-    """
-    Turns the robot by the given degrees without using a gyrosensor.
+print("Kamera sikeresen megnyitva.")
+print(f"Felbontás: {cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
 
-    params
-    ----------
-    angle: float
-        The degrees the robot turns by. Positive values turn the robot right, negative values turn it left
-    speed: float
-        The speed the robot turns by in cm/s
-    """
-    _robot.robot_turn(speed / wheel_circumference * 3200, angle, detachThread)
+# Egy kép elkészítése
+ret, frame = cap.read()
+image_path = os.path.join(os.path.dirname(__file__), 'kep.jpg')
 
-def move_straight_gyro(distance: float, speed: float = 20) -> None:
-    """
-    Moves the robot forwards or backwards by cm using the gyrosensor.
+if ret:
+    cv2.imwrite(image_path, frame)
+    print("Kép elmentve: kep.jpg")
+else:
+    print("Hiba: nem sikerült képet készíteni!")
 
-    params
-    ----------
-    distance: float
-        The distance the robot moves in centimeter. If negative the robot moves backwards
-    speed: float
-        The speed the robot moves in cm/s
-    """
-    _robot.robot_move_straight_gyro(speed / wheel_circumference * 3200, distance / wheel_circumference * 3200)
+cap.release()
 
-def turn_gyro(angle: float, speed: float = 10, detachThread: bool = False) -> None:
-    """
-    Turns the robot by the given degrees using the gyrosensor.
-
-    params
-    ----------
-    angle: float
-        The degrees the robot turns by. Positive values turn the robot right, negative values turn it left
-    speed: float
-        The speed the robot turns by in cm/s
-    """
-    _robot.robot_turn_gyro(speed / wheel_circumference * 3200, angle, detachThread)
-
-def gyro_angle() -> float:
-    return _robot.get_gyro_angle()
-
-def reset_gyro() -> None:
-    _robot.reset_gyro()
-
-move_straight_gyro(30, 20)
-time.sleep(.5)
-
-'''
-image_path = os.path.join(os.path.dirname(__file__), 'capture.jpg')
 base = os.path.dirname(image_path)
 image = cv2.imread(image_path)
 if image is None:
@@ -105,13 +58,12 @@ else:
 
     # itt a fő szál közben mást is csinálhat
     print("Feldolgozás külön szálon fut...")
-    
+ 
     #MOzgás...
 
     worker.join()  # megvárjuk, míg a szál végez
     print(f"process_image futási ideje: {results['elapsed_ms']:.1f} ms")
     print(results['grid'])
-'''
 
 '''
 # --- C++ calculator ---

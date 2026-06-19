@@ -72,6 +72,7 @@ void Robot::stopGyro() {
 void Robot::moveStraightGyro(double speed, double distance) {
     stopGyro();
 
+    double correctDistance= distance * 1.2344;
     double targetAngle    = gyro_.getAngleX();
     double estimatedSteps = 0.0;
     double integral       = 0.0;
@@ -83,14 +84,14 @@ void Robot::moveStraightGyro(double speed, double distance) {
     left_.startContinuous(RAMP_START_SPEED);
     right_.startContinuous(-RAMP_START_SPEED);
 
-    while (estimatedSteps < distance) {
+    while (estimatedSteps < correctDistance) {
         auto now = Clock::now();
         double dt = std::chrono::duration<double>(now - lastTime).count();
         lastTime = now;
 
         gyro_.update();
 
-        double progress    = std::min(estimatedSteps / distance, 1.0);
+        double progress    = std::min(estimatedSteps / correctDistance, 1.0);
         double speedFactor = (progress < RAMP_FRACTION)        ? progress / RAMP_FRACTION
                            : (progress > 1.0 - RAMP_FRACTION)  ? (1.0 - progress) / RAMP_FRACTION
                                                                 : 1.0;

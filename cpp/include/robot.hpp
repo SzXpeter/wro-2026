@@ -35,7 +35,7 @@ private:
     static constexpr double PID_KI         = 0.01;
     static constexpr double PID_KD         = 5.0;
     static constexpr double RAMP_START_SPEED = 800.0; // microsteps/s — matches move() ramp start
-    static constexpr double RAMP_FRACTION    = 0.15;   // fraction of travel used for ramp up/down
+    static constexpr double RAMP_FRACTION    = 0.2;   // fraction of travel used for ramp up/down
     // BCM GPIO pins (Waveshare DRV8825 HAT):
     //   Left  motor: DIR=13, STEP=19, ENABLE=12
     //   Right motor: DIR=24, STEP=26, ENABLE=4

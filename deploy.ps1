@@ -34,5 +34,5 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "Deploy kész. Futtatás a Pi-n..."
 
-wsl -d $WslDistro bash -c "$rsh ${PI_USER}@${PI_HOST} 'cd ${PI_REMOTE_PATH} && python3 main.py'"
+wsl -d $WslDistro bash -c "$rsh -t ${PI_USER}@${PI_HOST} 'cd ${PI_REMOTE_PATH} && python3 -u main.py'"
 exit $LASTEXITCODE
