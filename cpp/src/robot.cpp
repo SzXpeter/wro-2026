@@ -21,6 +21,18 @@ Robot::~Robot() {
     gyroThread_.join();
 }
 
+void Robot::moveRight(double speed, double distance, bool detachThread)
+{
+    rightThread_ = std::thread([&]{ right_.move(  distance, speed); });
+    if (!detachThread) rightThread_.join();
+}
+
+void Robot::moveLeft(double speed, double distance, bool detachThread)
+{
+    leftThread_ = std::thread([&]{ left_.move(  distance, speed); });
+    if (!detachThread) leftThread_.join();
+}
+
 void Robot::moveForward(double speed, double distance, bool detachThread = false) {
     int steps = static_cast<int>(distance);
 
@@ -69,11 +81,12 @@ void Robot::stopGyro() {
         gyroThread_.join();
 }
 
-void Robot::moveStraightGyro(double speed, double distance) {
+void Robot::moveStraightGyro(double speed, double distance, double angle) {
     stopGyro();
 
-    double correctDistance= distance * 1.2344;
-    double targetAngle    = gyro_.getAngleX();
+    double dir            = (distance < 0.0) ? -1.0 : 1.0;
+    double correctDistance = std::abs(distance) * 1.2344;
+    double targetAngle    = angle;
     double estimatedSteps = 0.0;
     double integral       = 0.0;
     double lastError      = 0.0;
@@ -81,8 +94,8 @@ void Robot::moveStraightGyro(double speed, double distance) {
     using Clock = std::chrono::steady_clock;
     auto lastTime = Clock::now();
 
-    left_.startContinuous(RAMP_START_SPEED);
-    right_.startContinuous(-RAMP_START_SPEED);
+    left_.startContinuous(dir * RAMP_START_SPEED);
+    right_.startContinuous(-dir * RAMP_START_SPEED);
 
     while (estimatedSteps < correctDistance) {
         auto now = Clock::now();
@@ -104,8 +117,8 @@ void Robot::moveStraightGyro(double speed, double distance) {
 
         double correction = PID_KP * error + PID_KI * integral + PID_KD * derivative;
 
-        left_.setContinuousSpeed(currentSpeed + correction);
-        right_.setContinuousSpeed(-(currentSpeed - correction));
+        left_.setContinuousSpeed(dir * currentSpeed + correction);
+        right_.setContinuousSpeed(-dir * currentSpeed + correction);
 
         estimatedSteps += currentSpeed * dt;
 

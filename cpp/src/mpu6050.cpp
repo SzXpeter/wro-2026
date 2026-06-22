@@ -88,7 +88,7 @@ void MPU6050::update() {
     double dt = std::chrono::duration<double>(now - lastTime_).count();
     lastTime_ = now;
 
-    double gx = -(readRaw(Reg::GYRO_XOUT_H) - gyroBias_.x) / gyroScale_;
+    double gx = -(readRaw(Reg::GYRO_XOUT_H + 2) - gyroBias_.y) / gyroScale_;
     angleX_ += gx * dt;
 }
 
