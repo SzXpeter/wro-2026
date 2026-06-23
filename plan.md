@@ -1,0 +1,5 @@
+- laposkanál
+- tál
+- kép
+- kockák felvétele
+- kockák lerakása

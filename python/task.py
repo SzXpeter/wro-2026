@@ -6,6 +6,7 @@ import RPi.GPIO as GPIO
 import brickpi3
 
 my_robot = robot.Robot()
+my_robot.wait_for_button_press()
 COLOR_GRID = None
 LEENGEDO_SERVO_PIN = 16
 EMELKAR_SERVO_PIN = 21
@@ -25,6 +26,7 @@ kiengeto_pwm.start(0)
 BP = brickpi3.BrickPi3()
 VERTICAL_MOTOR_PORT = BP.PORT_A
 BP.reset_motor_encoder(VERTICAL_MOTOR_PORT)
+
 def set_vertical_motor(angle, speed= 1000):
     BP.set_motor_limits(VERTICAL_MOTOR_PORT, 0, speed)
     BP.set_motor_position(BP.PORT_A, angle)
@@ -68,6 +70,14 @@ def grab_cube():
     time.sleep(1)
     set_servo_motors(emelkar_pwm, 0, hold=False)
     set_servo_motors(emelkar_pwm, -25, hold=False)
+    threading.Thread(target=get_cube_back).start()
+
+def get_cube_back():
+    set_servo_motors(leengedo_pwm, 45)
+    time.sleep(1)
+    set_servo_motors(leengedo_pwm, 30)
+    time.sleep(0.5)
+    set_servo_motors(leengedo_pwm, 25, hold=False)
 
 def up_cubes():
     set_servo_motors(leengedo_pwm, 45)
@@ -78,22 +88,39 @@ def release_cubes():
     time.sleep(0.25)
     set_servo_motors(kiengeto_pwm, 130, hold=True)
 
+def test_turn():
+    for i in range(1, 5):
+        my_robot.turn_right_gyro(10, 90*i)
+        my_robot.log(my_robot.gyro_angle())
+        time.sleep(0.5)
+    my_robot.wait_for_button_press()
+    for i in range(3, -1, -1):
+        my_robot.turn_right_gyro(10, 90*i)
+        my_robot.log(my_robot.gyro_angle())
+        time.sleep(0.5)
+
 def go_to_picture():
     global COLOR_GRID
-    my_robot.turn_left(50, speed=10, detach=False)
-    print(my_robot.gyro_angle())
-    my_robot.turn_right(50, speed=10, detach=False)
-    print(my_robot.gyro_angle())
-    my_robot.move_straight_gyro(-80, angle=0, speed=15)
-    print(my_robot.gyro_angle())
-    # COLOR_GRID = picture_and_process()
+    my_robot.turn_left_gyro(speed=7.5, angle=-55, slow=False)
+    my_robot.log(my_robot.gyro_angle())
+    my_robot.turn_right_gyro(speed=7.5, angle=0, slow=False)
+    my_robot.log(my_robot.gyro_angle())
+    my_robot.move_straight_gyro(-75, angle=0, speed=15)
+    my_robot.log(my_robot.gyro_angle())
+    COLOR_GRID = picture_and_process()
+    my_robot.log(COLOR_GRID)
     # my_robot.wait_for_button_press()
 
 
-    my_robot.turn_right(-40, speed=10, detach=False)
-    my_robot.move_straight_gyro(7, angle=-40, speed=10)
-    # my_robot.wait_for_button_press()
-    my_robot.move_straight_gyro(35, angle=0, speed=10)
+    my_robot.turn_right_gyro(angle=-40, speed=10)
+    my_robot.move_straight_gyro(7, angle=-40, speed=15)
+    my_robot.log(my_robot.gyro_angle())
+    my_robot.move_straight_gyro(25, angle=0, speed=15)
+    my_robot.wait_for_button_press()
+    my_robot.move_straight_gyro(-15, angle=-45, speed=10)
+    my_robot.wait_for_button_press()
+    my_robot.turn_right_gyro(speed=10, angle=30)
+    my_robot.move_straight_gyro(40, angle=30, speed=15)
 
 def test_moving():
     for i in range(1, 5):
@@ -105,54 +132,6 @@ def print_gyro():
     while my_robot.is_button_pressed() == False:
         print(my_robot.gyro_angle())
         time.sleep(0.01)
-
-
-
-# #!/usr/bin/env python3
-# from wroRobot import WroRobot
-# import brickpi3
-
-# class Task:
-#     def __init__(self):
-#         # self.robot = robot
-#         self.left_servo = 16
-#         GPIO.setup(self.left_servo, GPIO.OUT)
-#         self.left_pwm=GPIO.PWM(self.left_servo, 50)
-#         self.left_pwm.start(0)
-
-
-#     def __del__(self):
-#         self.left_pwm.stop()
-#         GPIO.cleanup()
-#         # self.robot.reset_all()
-
-
-#     def set_grabber(self, angle, hold=False):
-#         cycle = -(angle - 270) / 36 + 4.6
-#         # time.sleep(0.5)
-#         GPIO.output(self.left_servo, True)
-#         self.left_pwm.ChangeDutyCycle(cycle)
-
-#         time.sleep(0.3)
-#         if not hold:
-#             GPIO.output(self.left_servo, False)
-#             # GPIO.output(self.right_servo, False)
-# # 30 fok fellĂĽl
-# # 270 fok allul
-
-# task = Task()
-# #task.set_grabber(23, True)
-# #time.sleep(1)
-# #exit(0)
-
-# for i in range(6):
-# 	task.set_grabber(23+i*15, True)
-# time.sleep(2)
-# task.set_grabber(50)
-# task.set_grabber(23)
-
-
-
 
 def picture_and_process():
     try: 
@@ -197,3 +176,7 @@ def picture_and_process():
     except Exception as e:
         print(f"Hiba történt: {e}")
         return [['kek', 'feher', 'feher', 'sarga'], ['zold', 'sarga', 'zold', 'kek'], ['sarga', 'feher', 'kek', 'kek']]
+    
+def task1():
+    my_robot.move_straight_gyro(distance=56, angle=0)
+    my_robot.turn(angle=45)

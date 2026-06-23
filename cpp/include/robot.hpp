@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <atomic>
+#include <functional>
 #include "stepper_motor.hpp"
 #include "mpu6050.hpp"
 
@@ -20,6 +21,17 @@ public:
     void   waitForLeftMotor()  { if (leftThread_.joinable())  leftThread_.join(); }
     void   waitForRightMotor() { if (rightThread_.joinable()) rightThread_.join(); }
 
+    StepperMotor& getLeftMotor()  { return left_; }
+    StepperMotor& getRightMotor() { return right_; }
+    void setLeftThread( std::function<void()> thread, bool detach) {
+        leftThread_ = std::thread(thread);
+        if (leftThread_.joinable() && !detach) leftThread_.join();
+    }
+    void setRightThread(std::function<void()> thread, bool detach) {
+        rightThread_ = std::thread(thread);
+        if (rightThread_.joinable() && !detach) rightThread_.join();
+    }
+
     void waitForMotors() {
         if (leftThread_.joinable()) leftThread_.join();
         if (rightThread_.joinable()) rightThread_.join();
@@ -31,7 +43,7 @@ public:
     void   resetGyro();
 
 private:
-    static constexpr double PID_KP         = 32.5;
+    static constexpr double PID_KP         = 25;
     static constexpr double PID_KI         = 0.01;
     static constexpr double PID_KD         = 2.5;
     static constexpr double RAMP_START_SPEED = 800.0; // microsteps/s — matches move() ramp start

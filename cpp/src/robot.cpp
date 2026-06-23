@@ -47,8 +47,9 @@ void Robot::moveForward(double speed, double distance, bool detachThread = false
 
 void Robot::turn(double speed, double angle, bool detachThread = false) {
     int steps = 2200 / 90 * -angle;
+    // steps = steps = static_cast<int>(-(angle * 155.0 * 3200.0) / (360.0 * 56.0));
    
-    leftThread_  = std::thread([&]{ left_.move( steps, speed); });
+    leftThread_  = std::thread([&]{ left_.move(steps, speed); });
     rightThread_ = std::thread([&]{ right_.move(steps, speed); });
 
     if (detachThread) return;

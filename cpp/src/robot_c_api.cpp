@@ -5,12 +5,37 @@ static Robot robot;
 
 extern "C" {
     void robot_move_right(double speed, double distance, bool detachThread) {
-        robot.moveRight(speed, distance, detachThread);
+        robot.setLeftThread([&]{ robot.getLeftMotor().move( distance, speed); }, detachThread);
+    }
+
+    void robot_start_right_continous(double speed) {
+        robot.getLeftMotor().startContinuous(speed);
+    }
+
+    void robot_set_right_speed(double speed) {
+        robot.getLeftMotor().setContinuousSpeed(speed);
+    }
+
+    void robot_stop_right_continous() {
+        robot.getLeftMotor().stopContinuous();
     }
 
     void robot_move_left(double speed, double distance, bool detachThread) {
-        robot.moveLeft(speed, distance, detachThread);
+        robot.setRightThread([&]{ robot.getRightMotor().move( distance, speed); }, detachThread);
     }
+
+    void robot_start_left_continous(double speed) {
+        robot.getRightMotor().startContinuous(speed);
+    }
+
+    void robot_set_left_speed(double speed) {
+        robot.getRightMotor().setContinuousSpeed(speed);
+    }
+
+    void robot_stop_left_continous() {
+        robot.getRightMotor().stopContinuous();
+    }
+
 
     void robot_move_forward(double speed, double distance, bool detachThread) {
         robot.moveForward(speed, distance, detachThread);
