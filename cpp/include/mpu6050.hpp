@@ -18,7 +18,7 @@ public:
     void init(GyroRange gyro = GyroRange::DEG_250, AccelRange accel = AccelRange::G_2);
 
     // Call once while robot is stationary to zero gyro drift
-    void calibrate(int samples = 500);
+    void calibrate(int samples = 1000);
 
     Vec3   readAccel();   // m/s²
     Vec3   readGyro();    // degrees/s (bias-corrected after calibrate())

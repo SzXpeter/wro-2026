@@ -2,8 +2,7 @@ import robot
 import cv2, os, time, threading
 from datetime import datetime
 from framecolors import process_image
-import RPi.GPIO as GPIO
-import brickpi3
+import RPi.GPIO as GPIO # type: ignore
 
 my_robot = robot.Robot()
 my_robot.wait_for_button_press()
@@ -23,13 +22,12 @@ kiengeto_pwm = GPIO.PWM(KIENGETO_SERVO_PIN, 50)
 leengedo_pwm.start(0)
 emelkar_pwm.start(0)
 kiengeto_pwm.start(0)
-BP = brickpi3.BrickPi3()
-VERTICAL_MOTOR_PORT = BP.PORT_A
-BP.reset_motor_encoder(VERTICAL_MOTOR_PORT)
+VERTICAL_MOTOR_PORT = my_robot.PORT_A
+my_robot.reset_motor_encoder(VERTICAL_MOTOR_PORT)
 
 def set_vertical_motor(angle, speed= 1000):
-    BP.set_motor_limits(VERTICAL_MOTOR_PORT, 0, speed)
-    BP.set_motor_position(BP.PORT_A, angle)
+    my_robot.set_motor_limits(VERTICAL_MOTOR_PORT, 0, speed)
+    my_robot.set_motor_position(my_robot.PORT_A, angle)
 
 def set_servo_motors(pwm, angle = 98, hold=True):
 
@@ -176,7 +174,3 @@ def picture_and_process():
     except Exception as e:
         print(f"Hiba történt: {e}")
         return [['kek', 'feher', 'feher', 'sarga'], ['zold', 'sarga', 'zold', 'kek'], ['sarga', 'feher', 'kek', 'kek']]
-    
-def task1():
-    my_robot.move_straight_gyro(distance=56, angle=0)
-    my_robot.turn(angle=45)

@@ -1,10 +1,9 @@
 import ctypes
 import math
-from posixpath import sep
 import os, sys, time
-from tracemalloc import start
-import RPi.GPIO as GPIO
-import test
+import RPi.GPIO as GPIO # type: ignore
+from brickpi3 import BrickPi3
+from my_color_sernsor import my_color_sensor
 
 """
 38 GPIO fizikai szám: GRIO pin 1,  kiengedő
@@ -12,12 +11,14 @@ import test
 36 GPIO fizikai szám: GRIO pin 16, leengedőkar
 """
 
-class Robot:
+class Robot(BrickPi3):
     WHEEL_DIAMETER = 5.6
     WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER * math.pi
 
     def __init__(self, BUTTON_PIN: int = 27):
         self.BUTTON_PIN = BUTTON_PIN
+        self.color_sensor_PORT = self.PORT_1 # TODO: check real port
+        self.color_sensor = my_color_sensor(self.color_sensor_PORT, self)
         lib_path = os.path.join(os.path.dirname(__file__), 'lib', 'librobot.so')
         self._lib = ctypes.CDLL(lib_path)
         self._setup_signatures()    
@@ -256,6 +257,19 @@ class Robot:
             Ha True, a mozgás külön szálon fut és azonnal visszatér.
         """
         self._lib.robot_turn_gyro(self._to_microsteps(speed), angle, detach)
+
+    def align_to_black(self, speed=5, black_threshold = None):
+        self.start_left_continuos(speed=speed)
+        self.start_right_continuos(speed=speed)
+        is_running = 3 
+        while (is_running):
+            if self.color_sensor.is_black_reflection(black_threshold):
+                is_running -= 1
+            elif is_running: 
+                is_running = 3
+        self.log(f"fekete: {self.color_sensor.get_reflection()}")
+        self.stop_left_continuos()
+        self.stop_right_continuos()
 
     def gyro_angle(self) -> float:
         """Visszaadja a giroszkóp jelenlegi szögét fokban."""
