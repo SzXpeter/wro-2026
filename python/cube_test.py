@@ -1,3 +1,6 @@
+from tkinter.filedialog import test
+
+
 test1 = [
             ["kek", "sarga", "kek", "kek"],
             ["sarga", "zold", "sarga", "zold"], 
@@ -29,9 +32,9 @@ test5 = [
         ]      
 
 loaded = [
-            ["", "", "", ""],
-            ["", "", "", ""], 
-            ["", "", "", ""], 
+            ["", "sarga", "kek", "kek"],
+            ["sarga", "zold", "sarga", "zold"], 
+            ["", "sarga", "kek", "kek"], 
         ]  
 def transform(old):
     new = [[], [], [], []]
@@ -44,7 +47,16 @@ def transform(old):
 
 transformed = transform(test5)
 
-def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_white, now_position):
+def best_to_next(test, loaded, now_position):
+    picked_yellow = 0
+    picked_blue = 0
+    picked_green = 0
+    picked_white = 0
+    for load in loaded:
+        picked_yellow += load.count("sarga")
+        picked_blue += load.count("kek")
+        picked_green += load.count("zold")
+        picked_white += load.count("feher")
     d1 = [test[i][j] for i in range(3) for j in range(4) if test[i][j] != loaded[i][j]]
     need_blue = 'kek' in d1
     need_yellow = 'sarga' in d1
@@ -55,20 +67,20 @@ def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_
     can_green = True
     can_white = True
 
-    if not need_yellow or need_blue and picked_yellow -  picked_blue  >= 2:
+    if not need_yellow or need_blue and int((picked_yellow -  picked_blue+1)/2)  >= 1:
         can_yellow = False
 
-    if not need_blue or need_green and picked_blue -  picked_green  >= 2:
+    if not need_blue or need_green and int((picked_blue -  picked_green+1)/2)  >= 1:
         can_blue = False   
-    if not need_blue or need_yellow and picked_blue -  picked_yellow  >= 2:
+    if not need_blue or need_yellow and int((picked_blue -  picked_yellow+1)/2)  >= 1:
         can_blue = False
 
-    if not need_green or need_white and picked_green -  picked_white  >= 2:
+    if not need_green or need_white and int((picked_green -  picked_white+1)/2)  >= 1:
         can_green = False
-    if not need_green or need_blue and picked_green -  picked_blue  >= 2:
+    if not need_green or need_blue and int((picked_green -  picked_blue+1)/2)  >= 1:
         can_green = False
 
-    if not need_white or need_yellow and picked_white -  picked_yellow  >= 2:
+    if not need_white or need_yellow and int((picked_white -  picked_yellow+1)/2)  >= 1:
         can_white = False
 
 
@@ -80,7 +92,7 @@ def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_
     for color in ["sarga", "kek", "zold", "feher"]:
         for i in range(3):
             for j in range(3, -1, -1):
-                if test[i][j] == color and loaded[i][j] != color:
+                if test[i][j] == color and loaded[i][j] == "":
                     match (color):
                         case "sarga":
                             yellow_count += 1
@@ -90,7 +102,7 @@ def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_
                             green_count += 1
                         case "feher":
                             white_count += 1
-                    if test[i][j-1] == color and loaded[i][j-1] != color:
+                    if test[i][j-1] == color and loaded[i][j-1] == "":
                         match (color):
                             case "sarga":
                                 yellow_count += 1
@@ -100,11 +112,11 @@ def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_
                                 green_count += 1
                             case "feher":
                                 white_count += 1
+                    print(f"test[{i}][{j}] = {test[i][j]}, loaded[{i}][{j}] = {loaded[i][j]}")
                     break
-                if loaded[i][j] not in ["sarga", "kek", "zold", "feher"]:
+                if loaded[i][j] == "":
                     break
-                else:
-                    print(f"loaded[{i}][{j}] = {loaded[i][j]}")
+                
     
     can_go_to = []
     if can_yellow and yellow_count > 1:
@@ -125,32 +137,54 @@ def best_to_next(test, loaded, picked_yellow, picked_blue, picked_green, picked_
             can_go_to.append(2)
         if need_white and can_white:
             can_go_to.append(3)
-    final = -1
+    final_color = -1
     if now_position in can_go_to:
-        final = now_position
+        final_color = now_position
     elif now_position - 1 in can_go_to:
-        final = now_position - 1
+        final_color = now_position - 1
     elif now_position + 1 in can_go_to:
-        final = now_position + 1
+        final_color = now_position + 1
     elif now_position - 2 in can_go_to:
-        final = now_position - 2
+        final_color = now_position - 2
     elif now_position + 2 in can_go_to:
-        final = now_position + 2
+        final_color = now_position + 2
     else:
-        final = can_go_to[0] if len(can_go_to) > 0 else -1
+        return -1, []
+    pos = []
+    match (final_color):
+        case 0:
+            final_color = "sarga"
+        case 1:
+            final_color = "kek"
+        case 2:
+            final_color = "zold"
+        case 3:
+            final_color = "feher"
 
-    return final
 
-    print(f"d1: {d1}")
+    for i in range(3):
+        for j in range(3, -1, -1):
+            if test[i][j] == final_color and loaded[i][j] == "":
+                pos.append(i)  
+                if j != 0 and test[i][j-1] == final_color: pos.append(i)  
+                break
+            if loaded[i][j] == "":
+                break
+
+
+    # print(f"d1: {d1}")
+    print(f"picked_yellow: {picked_yellow}, picked_blue: {picked_blue}, picked_green: {picked_green}, picked_white: {picked_white}")
     print(f"need_blue: {need_blue}, need_yellow: {need_yellow}, need_white: {need_white}, need_green: {need_green}")
     print(f"can_blue: {can_blue}, can_yellow: {can_yellow}, can_white: {can_white}, can_green: {can_green}")
     print(f"yellow_count: {yellow_count}, blue_count: {blue_count}, green_count: {green_count}, white_count: {white_count}")
     print(f"{can_go_to = }")
+    return final_color, pos
     # for i in range(3):
 
 
 
 if __name__ == '__main__':
-    print(*test4, sep=',\n')
-    print(best_to_next(test4, loaded, 0, 0, 3, 2, 1))
+    print(int(1.6))
+    print(*test1, sep=',\n')
+    print(best_to_next(test1, loaded, 2))
 
