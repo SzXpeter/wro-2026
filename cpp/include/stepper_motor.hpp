@@ -20,7 +20,7 @@ public:
 
     // steps > 0  → forward,  steps < 0 → backward
     // stepsPerSecond: microsteps per second
-    void move(int steps, double stepsPerSecond);
+    void move(int steps, double stepsPerSecond, double rampFraction = .2);
 
     // Continuous pulsing on a background thread.
     // setContinuousSpeed() is safe to call from any thread at any time:

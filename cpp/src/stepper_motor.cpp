@@ -6,7 +6,6 @@
 static constexpr unsigned int PULSE_US          = 5;    // DRV8825 min step pulse: 1.9µs
 static constexpr unsigned int DIR_SETUP_US      = 5;
 static constexpr double       RAMP_START_SPEED  = 800.0; // microsteps/s
-static constexpr double       RAMP_FRACTION     = 0.2;   // fraction of travel for ramp up/down
 
 StepperMotor::StepperMotor(int stepPin, int dirPin, int enablePin, int microsteps)
     : stepPin_(stepPin), dirPin_(dirPin), enablePin_(enablePin), microsteps_(microsteps)
@@ -51,7 +50,7 @@ void StepperMotor::pulse() {
 long StepperMotor::getStepCount() const { return stepCount_.load(); }
 void StepperMotor::resetStepCount()     { stepCount_.store(0); }
 
-void StepperMotor::move(int steps, double stepsPerSecond) {
+void StepperMotor::move(int steps, double stepsPerSecond, double rampFraction) {
     if (steps == 0 || stepsPerSecond <= 0.0)
         return;
 
@@ -62,8 +61,8 @@ void StepperMotor::move(int steps, double stepsPerSecond) {
 
     for (int i = 0; i < absSteps; ++i) {
         double progress    = static_cast<double>(i) / absSteps;
-        double speedFactor = (progress < RAMP_FRACTION)       ? progress / RAMP_FRACTION
-                           : (progress > 1.0 - RAMP_FRACTION) ? (1.0 - progress) / RAMP_FRACTION
+        double speedFactor = (progress < rampFraction)       ? progress / rampFraction
+                           : (progress > 1.0 - rampFraction) ? (1.0 - progress) / rampFraction
                                                                : 1.0;
         double currentSpeed = std::max(stepsPerSecond * speedFactor, RAMP_START_SPEED);
 

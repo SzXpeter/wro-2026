@@ -31,3 +31,9 @@ if __name__ == "__main__":
         remote_path="/home/jedlikpi/wro2026/log",
         port=22  # change if needed
     )
+    copy_script_directory(
+        remote_user="jedlikpi",
+        remote_host="jedlikpi",
+        remote_path="/home/jedlikpi/wro2026/kepek",
+        port=22  # change if needed
+    )

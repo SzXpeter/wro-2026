@@ -1,90 +1,45 @@
-import robot
+import dis
+from turtle import left
+
+from servo_motors import * 
 import cv2, os, time, threading
 from datetime import datetime
 from framecolors import process_image
-import RPi.GPIO as GPIO # type: ignore
 
-my_robot = robot.Robot()
-my_robot.wait_for_button_press()
 COLOR_GRID = None
-LEENGEDO_SERVO_PIN = 16
-EMELKAR_SERVO_PIN = 21
-KIENGETO_SERVO_PIN = 20
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-GPIO.setup(LEENGEDO_SERVO_PIN, GPIO.OUT)
-GPIO.setup(EMELKAR_SERVO_PIN, GPIO.OUT)
-GPIO.setup(KIENGETO_SERVO_PIN, GPIO.OUT)
-leengedo_pwm = GPIO.PWM(LEENGEDO_SERVO_PIN, 50)
-emelkar_pwm = GPIO.PWM(EMELKAR_SERVO_PIN, 50)
-kiengeto_pwm = GPIO.PWM(KIENGETO_SERVO_PIN, 50)
 
-leengedo_pwm.start(0)
-emelkar_pwm.start(0)
-kiengeto_pwm.start(0)
-VERTICAL_MOTOR_PORT = my_robot.PORT_A
-my_robot.reset_motor_encoder(VERTICAL_MOTOR_PORT)
 
-def set_vertical_motor(angle, speed= 1000):
-    my_robot.set_motor_limits(VERTICAL_MOTOR_PORT, 0, speed)
-    my_robot.set_motor_position(my_robot.PORT_A, angle)
-
-def set_servo_motors(pwm, angle = 98, hold=True):
-
-    """
-        30  fellül
-        270 allul
-    """
-    cycle = -(angle - 270) / 36 + 4.6
-    # GPIO.output(motorpin, True)
-
-    pwm.ChangeDutyCycle(cycle)
-    time.sleep(0.3)
-    if not hold:
-        pwm.ChangeDutyCycle(0)
-    
-def down_cubes_slowly():
-    for angle in range(23, 98, 15):
-        set_servo_motors(leengedo_pwm, angle, hold=True)
-    set_servo_motors(leengedo_pwm, 90, hold=True)
-    # set_servo_motors  (30, hold=False)
-
-def test_release_cubes():
+def release_all_to_grid():
     release_cubes()
-
-    down_cubes_slowly()
-    my_robot.wait_for_button_press()
-
     for _ in range(3):
+        my_robot.move_straight_gyro(5.25, angle=0, speed=3)
+        time.sleep(0.1)
+        my_robot.wait_for_button_press()
         release_cubes()
-        my_robot.move_straight_gyro(distance=5, angle=0, speed=10)
-        print(my_robot.gyro_angle())
-    release_cubes()
 
-def grab_cube():
-    # set_servo_motors(emelkar_pwm, 25, hold=True)
+def go_to_pos(pos):
+    set_vertical_motor(315 + pos*450)
 
-    set_servo_motors(emelkar_pwm, 200, hold = True)
-    time.sleep(1)
-    set_servo_motors(emelkar_pwm, 0, hold=False)
-    set_servo_motors(emelkar_pwm, -25, hold=False)
-    threading.Thread(target=get_cube_back).start()
-
-def get_cube_back():
-    set_servo_motors(leengedo_pwm, 45)
-    time.sleep(1)
-    set_servo_motors(leengedo_pwm, 30)
-    time.sleep(0.5)
-    set_servo_motors(leengedo_pwm, 25, hold=False)
-
-def up_cubes():
-    set_servo_motors(leengedo_pwm, 45)
-    set_servo_motors(leengedo_pwm, 23)
-
-def release_cubes():
-    set_servo_motors(kiengeto_pwm, 25, hold=False)
+def pick_up_two_cubes(lefter):
+    go_to_pos(0)
     time.sleep(0.25)
-    set_servo_motors(kiengeto_pwm, 130, hold=True)
+    my_robot.wait_for_button_press()
+    lift_cube(down = False)
+    time.sleep(0.75)
+    set_lifter(100)        
+    time.sleep(0.25)
+    threading.Thread(target=get_cube_back).start()
+    set_vertical_motor(my_robot.get_motor_encoder(my_robot.PORT_A) + 705)
+
+    
+    time.sleep(0.75)
+    down_lifter()
+    if lefter:
+        set_vertical_motor(my_robot.get_motor_encoder(my_robot.PORT_A) + 225    )
+    # my_robot.wait_for_button_press()
+    time.sleep(0.25)
+    
+    lift_cube()
 
 def test_turn():
     for i in range(1, 5):
@@ -103,22 +58,37 @@ def go_to_picture():
     my_robot.log(my_robot.gyro_angle())
     my_robot.turn_right_gyro(speed=7.5, angle=0, slow=False)
     my_robot.log(my_robot.gyro_angle())
-    my_robot.move_straight_gyro(-75, angle=0, speed=15)
+    my_robot.move_straight_gyro(distance=-80, angle=0, speed=20, rampFraction=.05)
     my_robot.log(my_robot.gyro_angle())
     COLOR_GRID = picture_and_process()
     my_robot.log(COLOR_GRID)
     # my_robot.wait_for_button_press()
 
+    # megtolja a dolgot a picture_and_process függvényben
 
-    my_robot.turn_right_gyro(angle=-40, speed=10)
-    my_robot.move_straight_gyro(7, angle=-40, speed=15)
-    my_robot.log(my_robot.gyro_angle())
-    my_robot.move_straight_gyro(25, angle=0, speed=15)
-    my_robot.wait_for_button_press()
-    my_robot.move_straight_gyro(-15, angle=-45, speed=10)
-    my_robot.wait_for_button_press()
-    my_robot.turn_right_gyro(speed=10, angle=30)
-    my_robot.move_straight_gyro(40, angle=30, speed=15)
+    # my_robot.wait_for_button_press()
+    my_robot.move_straight_gyro(distance=-11, angle=-30, speed=15)
+    # my_robot.wait_for_button_press()
+    my_robot.turn_right_gyro(speed=10, angle = 35)
+    my_robot.move_straight_gyro(43, angle=35, speed=15, rampFraction=.1)
+    my_robot.turn_gyro(0)
+    # my_robot.wait_for_button_press()
+    my_robot.align_to_black()
+    my_robot.turn_gyro(90)
+    my_robot.align_to_black()
+
+def pick_up_cube(now_position, goal_position):
+    pass
+
+def put_cubes_down(start_position):
+    my_robot.move_straight_gyro(distance=13.5, angle=90)
+    my_robot.align_to_black()
+    my_robot.move_straight_gyro(distance=6, angle=90)
+    my_robot.turn_gyro(0)
+    my_robot.move_straight_gyro(distance=-40, angle=0, rampFraction=.1)
+    my_robot.align_to_black(speed=-5)
+    my_robot.move_straight_gyro(distance=-10, speed=10, angle=0)
+
 
 def test_moving():
     for i in range(1, 5):
@@ -132,12 +102,13 @@ def print_gyro():
         time.sleep(0.01)
 
 def picture_and_process():
+    # and also push the thing back
     try: 
         cap = cv2.VideoCapture(0)
         ret, frame = cap.read()
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        image_path = os.path.join(os.path.dirname(__file__), f'kep_{timestamp}.jpg')
-
+        image_path = os.path.join(os.path.dirname(__file__), "kepek", f'kep_{timestamp}.jpg')
+        print(image_path)
         if ret:
             cv2.imwrite(image_path, frame)
             print(f"Kép elmentve: kep_{timestamp}.jpg")
@@ -163,12 +134,18 @@ def picture_and_process():
             worker.start()
 
             # itt a fő szál közben mást is csinálhat
-            print("Feldolgozás külön szálon fut...")
+            my_robot.log("Feldolgozás külön szálon fut...")
         
-            #MOzgás...
+            #Mozgás...
+            my_robot.turn_right_gyro(angle=-20, speed=10)
+            my_robot.move_straight_gyro(distance=10, angle=-20, speed=15)
+            my_robot.log(my_robot.gyro_angle())
+            my_robot.move_straight_gyro(distance=31, angle=0, speed=15)
+
 
             worker.join()  # megvárjuk, míg a szál végez
-            print(f"process_image futási ideje: {results['elapsed_ms']:.1f} ms")
+            my_robot.log(f"process_image futási ideje: {results['elapsed_ms']:.1f} ms")
+            my_robot.log(f"Végül: {results['grid']}")
             return results['grid']
 
     except Exception as e:
