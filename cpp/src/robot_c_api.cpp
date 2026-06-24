@@ -4,8 +4,8 @@
 static Robot robot;
 
 extern "C" {
-    void robot_move_right(double speed, double distance, bool detachThread) {
-        robot.setLeftThread([&]{ robot.getLeftMotor().move( distance, speed); }, detachThread);
+    void robot_move_right(double speed, double distance, bool detachThread, double rampFraction) {
+        robot.setLeftThread([&]{ robot.getLeftMotor().move( distance, speed, rampFraction); }, detachThread);
     }
 
     void robot_start_right_continous(double speed) {
@@ -20,8 +20,8 @@ extern "C" {
         robot.getLeftMotor().stopContinuous();
     }
 
-    void robot_move_left(double speed, double distance, bool detachThread) {
-        robot.setRightThread([&]{ robot.getRightMotor().move( distance, speed); }, detachThread);
+    void robot_move_left(double speed, double distance, bool detachThread, double rampFraction) {
+        robot.setRightThread([&]{ robot.getRightMotor().move( distance, speed, rampFraction); }, detachThread);
     }
 
     void robot_start_left_continous(double speed) {
@@ -37,20 +37,20 @@ extern "C" {
     }
 
 
-    void robot_move_forward(double speed, double distance, bool detachThread) {
-        robot.moveForward(speed, distance, detachThread);
+    void robot_move_forward(double speed, double distance, bool detachThread, double rampFraction) {
+        robot.moveForward(speed, distance, detachThread, rampFraction);
     }
 
-    void robot_turn(double speed, double angle, bool detachThread) {
-        robot.turn(speed, angle, detachThread);
+    void robot_turn(double speed, double angle, bool detachThread, double rampFraction) {
+        robot.turn(speed, angle, detachThread, rampFraction);
     }
 
-    void robot_turn_gyro(double speed, double angle, bool detachThread) {
-        robot.turnGyro(speed, angle, detachThread);
+    void robot_turn_gyro(double speed, double angle, bool detachThread, double rampFraction) {
+        robot.turnGyro(speed, angle, detachThread, rampFraction);
     }
 
-    void robot_move_straight_gyro(double speed, double distance, double angle) {
-        robot.moveStraightGyro(speed, distance, angle);
+    void robot_move_straight_gyro(double speed, double distance, double angle, double rampFraction) {
+        robot.moveStraightGyro(speed, distance, angle, rampFraction);
     }
 
     void wait_for_left_motor() {

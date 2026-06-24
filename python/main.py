@@ -1,20 +1,26 @@
-
 from task import *
 
 my_robot.wait_for_button_press()
 
-
-# test_turn()
-# my_robot.move_straight_gyro(distance=50, angle=0, speed=25)
-# time.sleep(2)
-# my_robot.move_straight_gyro(distance=50, angle=0, speed=25)
-
-go_to_picture()
-time.sleep(1)
-
-exit(0)
-# test_moving()
 # my_robot.wait_for_button_press()
+# my_robot.reset_gyro()
+# my_robot.calibrate()
+# time.sleep(1)
+
+# go_to_picture()
+# put_cubes_down(0)
+
+# release_all_to_grid()
+# picture_and_process()
+# time.sleep(1)
+pick_up_two_cubes(0)
+
+
+
+# time.sleep(0.5)
+# my_robot.wait_for_button_press()
+set_vertical_motor(0)
+time.sleep(2)
 # test_release_cubes()
 # print_gyro()
 # picture_and_process()
@@ -26,19 +32,11 @@ exit(0)
 #     set_vertical_motor(n + 480*i)
 #     time.sleep(0.5)
 #     my_robot.wait_for_button_press()
-#     grab_cube()
-
-my_robot.log()
-
-my_robot.wait_for_button_press()
-set_vertical_motor(0)
-
-time.sleep(0.5)
-my_robot.wait_for_button_press()
+#     lift_cube()
 
 # down_cubes_slowly()
 # Egy kép elkészítése
-BP.reset_all()
+my_robot.reset_all()
 
 '''
 # --- C++ calculator ---

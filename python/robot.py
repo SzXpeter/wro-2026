@@ -17,7 +17,9 @@ class Robot(BrickPi3):
 
     def __init__(self, BUTTON_PIN: int = 27):
         self.BUTTON_PIN = BUTTON_PIN
-        self.color_sensor_PORT = self.PORT_1 # TODO: check real port
+        BrickPi3.__init__(self)
+        self.set_led(0)
+        self.color_sensor_PORT = self.PORT_2
         self.color_sensor = my_color_sensor(self.color_sensor_PORT, self)
         lib_path = os.path.join(os.path.dirname(__file__), 'lib', 'librobot.so')
         self._lib = ctypes.CDLL(lib_path)
@@ -26,6 +28,7 @@ class Robot(BrickPi3):
         GPIO.setwarnings(False)
         GPIO.setup(self.BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         self.start_log()
+        self.set_led(100)
         # self.wait_for_button_press()
 
     def __delete__(self, instance):
@@ -43,7 +46,7 @@ class Robot(BrickPi3):
         return GPIO.input(self.BUTTON_PIN) == GPIO.LOW
 
     def _setup_signatures(self):
-        self._lib.robot_move_right.argtypes   = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+        self._lib.robot_move_right.argtypes   = [ctypes.c_double, ctypes.c_double, ctypes.c_bool, ctypes.c_double]
         self._lib.robot_move_right.restype    = None
 
         self._lib.robot_start_right_continous.argtypes = [ctypes.c_double]
@@ -53,7 +56,7 @@ class Robot(BrickPi3):
         self._lib.robot_stop_right_continous.argtypes  = []
         self._lib.robot_stop_right_continous.restype   = None
 
-        self._lib.robot_move_left.argtypes    = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+        self._lib.robot_move_left.argtypes    = [ctypes.c_double, ctypes.c_double, ctypes.c_bool, ctypes.c_double]
         self._lib.robot_move_left.restype     = None
 
         self._lib.robot_start_left_continous.argtypes  = [ctypes.c_double]
@@ -63,13 +66,13 @@ class Robot(BrickPi3):
         self._lib.robot_stop_left_continous.argtypes   = []
         self._lib.robot_stop_left_continous.restype    = None
 
-        self._lib.robot_move_forward.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+        self._lib.robot_move_forward.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_bool, ctypes.c_double]
         self._lib.robot_move_forward.restype  = None
-        self._lib.robot_turn.argtypes         = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+        self._lib.robot_turn.argtypes         = [ctypes.c_double, ctypes.c_double, ctypes.c_bool, ctypes.c_double]
         self._lib.robot_turn.restype          = None
-        self._lib.robot_turn_gyro.argtypes    = [ctypes.c_double, ctypes.c_double, ctypes.c_bool]
+        self._lib.robot_turn_gyro.argtypes    = [ctypes.c_double, ctypes.c_double, ctypes.c_bool, ctypes.c_double]
         self._lib.robot_turn_gyro.restype     = None
-        self._lib.robot_move_straight_gyro.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double]
+        self._lib.robot_move_straight_gyro.argtypes = [ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
         self._lib.robot_move_straight_gyro.restype  = None
         self._lib.wait_for_left_motor.argtypes = []
         self._lib.wait_for_left_motor.restype  = None
@@ -86,31 +89,29 @@ class Robot(BrickPi3):
     def _angle_to_microsteps(self, angle: float) -> float:
         return 4400 / 90 * -angle
 
-    def move_right(self, distance: float, speed: float = 20, detach: bool = False) -> None:
-        self._lib.robot_move_left(
+    def _move_right(self, distance: float, speed: float = 20, detach: bool = False, rampFraction: float = .2) -> None:
+        self._lib.robot_move_right(
             self._to_microsteps(speed),
             self._to_microsteps(distance),
             detach,
+            rampFraction
         )
 
-    def move_left(self, distance: float, speed: float = 20, detach: bool = False) -> None:
-        self._lib.robot_move_right(
+    def _move_left(self, distance: float, speed: float = 20, detach: bool = False, rampFraction: float = .2) -> None:
+        self._lib.robot_move_left(
             self._to_microsteps(speed),
             self._to_microsteps(-distance),
             detach,
-        )
-
-    def turn_right(self, distance: float, speed: float = 20, detach: bool = False) -> None:
-        self._lib.robot_move_left(
-            self._to_microsteps(speed),
-            self._angle_to_microsteps(distance),
-            detach,
+            rampFraction
         )
 
     def start_left_continuos(self, speed: float):
         self._lib.robot_start_left_continous(
             self._to_microsteps(speed)
         )
+
+    def set_left_speed(self, speed: float):
+        self._lib.robot_set_left_speed(self._to_microsteps(speed))
 
     def stop_left_continuos(self):
         self._lib.robot_stop_left_continous()
@@ -120,15 +121,11 @@ class Robot(BrickPi3):
             self._to_microsteps(speed)
         )
 
+    def set_right_speed(self, speed: float):
+        self._lib.robot_set_right_speed(self._to_microsteps(speed))
+
     def stop_right_continuos(self):
         self._lib.robot_stop_right_continous()
-
-    def turn_left(self, distance: float, speed: float = 5, detach: bool = False) -> None:
-        self._lib.robot_move_right(
-            self._to_microsteps(speed),
-            self._angle_to_microsteps(-distance),
-            detach,
-        )
 
     def turn_left_gyro(self, speed, angle, slow=True):
         start_angle = self.gyro_angle()
@@ -137,7 +134,7 @@ class Robot(BrickPi3):
             angle_now = self.gyro_angle()
             while (angle_now > angle):
                 if (slow and abs(angle - angle_now) < 10):
-                    self.start_left_continuos(speed/5)
+                    self.set_left_speed(speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
         else: 
@@ -145,7 +142,7 @@ class Robot(BrickPi3):
             angle_now = self.gyro_angle()
             while (angle_now < angle): 
                 if (slow and abs(angle_now - angle) < 10):
-                    self.start_left_continuos(-speed/5)
+                    self.set_left_speed(-speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
         self.stop_left_continuos()
@@ -159,14 +156,13 @@ class Robot(BrickPi3):
             angle_now = self.gyro_angle()
             while (angle_now > angle):
                 if (slow and abs(angle - angle_now) < 10):
-                    self.start_right_continuos(speed/5)
+                    self.set_right_speed(speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
                 if time.time() - start_time > 2 and not is_fastened:
-                    self.start_right_continuos(speed)
+                    self.set_right_speed(speed)
                     self.log("fastened")
                     is_fastened = True
-
         else: 
             self.start_right_continuos(-speed/2)
             angle_now = self.gyro_angle()
@@ -182,7 +178,7 @@ class Robot(BrickPi3):
 
         self.stop_right_continuos()
 
-    def move(self, distance: float, speed: float = 20, detach: bool = False) -> None:
+    def _move(self, distance: float, speed: float = 20, detach: bool = False, rampFraction: float = .2) -> None:
         """
         Mozgatja a robotot előre/hátra cm-ben.
 
@@ -199,9 +195,10 @@ class Robot(BrickPi3):
             self._to_microsteps(speed),
             self._to_microsteps(distance),
             detach,
+            rampFraction
         )
 
-    def turn(self, angle: float, speed: float = 10, detach: bool = False) -> None:
+    def turn(self, angle: float, speed: float = 10, detach: bool = False, rampFraction: float = .2) -> None:
         """
         Forgatja a robotot giroszkóp nélkül.
 
@@ -214,9 +211,14 @@ class Robot(BrickPi3):
         detach: bool
             Ha True, a mozgás külön szálon fut és azonnal visszatér.
         """
-        self._lib.robot_turn(self._to_microsteps(speed), angle, detach)
+        self._lib.robot_turn(
+            self._to_microsteps(speed),
+            angle, 
+            detach,
+            rampFraction
+        )
 
-    def move_straight_gyro(self, distance: float, angle: float, speed: float = 20) -> None:
+    def move_straight_gyro(self, distance: float, angle: float, speed: float = 20, rampFraction: float = .2) -> None:
         """
         Mozgatja a robotot előre/hátra cm-ben giroszkóppal egyenesen tartva.
 
@@ -232,7 +234,8 @@ class Robot(BrickPi3):
         self._lib.robot_move_straight_gyro(
             self._to_microsteps(speed),
             self._to_microsteps(distance),
-            angle
+            angle,
+            rampFraction
         )
 
     def wait_for_left_motor(self) -> None:
@@ -243,7 +246,7 @@ class Robot(BrickPi3):
         """Megvárja, míg a jobb motor befejezi a mozgást."""
         self._lib.wait_for_right_motor()
 
-    def turn_gyro(self, angle: float, speed: float = 7, detach: bool = False) -> None:
+    def turn_gyro(self, angle: float, speed: float = 10, detach: bool = False, rampFraction: float = .2) -> None:
         """
         Forgatja a robotot giroszkóppal.
 
@@ -256,10 +259,15 @@ class Robot(BrickPi3):
         detach: bool
             Ha True, a mozgás külön szálon fut és azonnal visszatér.
         """
-        self._lib.robot_turn_gyro(self._to_microsteps(speed), angle, detach)
+        self._lib.robot_turn_gyro(
+            self._to_microsteps(speed), 
+            angle - self.gyro_angle(), 
+            detach,
+            rampFraction
+        )
 
     def align_to_black(self, speed=5, black_threshold = None):
-        self.start_left_continuos(speed=speed)
+        self.start_left_continuos(speed=-speed)
         self.start_right_continuos(speed=speed)
         is_running = 3 
         while (is_running):
@@ -301,3 +309,6 @@ class Robot(BrickPi3):
         with open(self.log_file_name, "w+") as f:
             pass
         print("Log file created: {0}".format(self.log_file_name), file=sys.stderr)    
+
+    def calibrate(self):
+        self.color_sensor.calibrate(self.is_button_pressed)

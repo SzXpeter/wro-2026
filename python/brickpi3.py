@@ -12,7 +12,7 @@ from __future__ import division
 #from builtins import input
 
 import subprocess # for executing system calls
-import spidev # type: ignore
+import spidev
 import array      # for converting hex string to byte array
 
 FIRMWARE_VERSION_REQUIRED = "1.4.x" # Make sure the top 2 of 3 numbers match
@@ -82,7 +82,8 @@ def set_address(address, id):
             raise IOError("brickpi3.set_address error: unknown serial number id problem. Make sure to use a valid 32-digit hex string serial number.")
             return
 
-    outArray = [0, BrickPi3.BPSPI_MESSAGE_TYPE.SET_ADDRESS, address] 
+    outArray = [0, BrickPi3.BPSPI_MESSAGE_TYPE.SET_ADDRESS, address]
+    outArray.extend(id_arr)
     BP_SPI.xfer2(outArray)
 
 

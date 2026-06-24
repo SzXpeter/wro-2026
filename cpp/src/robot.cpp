@@ -13,7 +13,7 @@ Robot::Robot()
     startGyro();
     right_.enable();
     left_.enable();
-    gyro_.resetAngleX();
+    // gyro_.resetAngleX();
 }
 
 Robot::~Robot() {
@@ -21,36 +21,34 @@ Robot::~Robot() {
     gyroThread_.join();
 }
 
-void Robot::moveRight(double speed, double distance, bool detachThread)
-{
-    rightThread_ = std::thread([&]{ right_.move(  distance, speed); });
+void Robot::moveRight(double speed, double distance, bool detachThread, double rampFraction) {
+    rightThread_ = std::thread([&]{ right_.move(  distance, speed, rampFraction); });
     if (!detachThread) rightThread_.join();
 }
 
-void Robot::moveLeft(double speed, double distance, bool detachThread)
-{
-    leftThread_ = std::thread([&]{ left_.move(  distance, speed); });
+void Robot::moveLeft(double speed, double distance, bool detachThread, double rampFraction) {
+    leftThread_ = std::thread([&]{ left_.move(  distance, speed, rampFraction); });
     if (!detachThread) leftThread_.join();
 }
 
-void Robot::moveForward(double speed, double distance, bool detachThread = false) {
+void Robot::moveForward(double speed, double distance, bool detachThread, double rampFraction) {
     int steps = static_cast<int>(distance);
 
     // Right motor is mirrored → opposite direction for forward movement
-    leftThread_  = std::thread([&]{ left_.move(  steps, speed); });
-    rightThread_ = std::thread([&]{ right_.move(-steps, speed); });
+    leftThread_  = std::thread([&]{ left_.move(  steps, speed, rampFraction); });
+    rightThread_ = std::thread([&]{ right_.move(-steps, speed, rampFraction); });
 
     if (detachThread) return;
     if (leftThread_.joinable()) leftThread_.join();
     if (rightThread_.joinable()) rightThread_.join();
 }
 
-void Robot::turn(double speed, double angle, bool detachThread = false) {
+void Robot::turn(double speed, double angle, bool detachThread = false, double rampFraction) {
     int steps = 2200 / 90 * -angle;
     // steps = steps = static_cast<int>(-(angle * 155.0 * 3200.0) / (360.0 * 56.0));
    
-    leftThread_  = std::thread([&]{ left_.move(steps, speed); });
-    rightThread_ = std::thread([&]{ right_.move(steps, speed); });
+    leftThread_  = std::thread([&]{ left_.move(steps, speed, rampFraction); });
+    rightThread_ = std::thread([&]{ right_.move(steps, speed, rampFraction); });
 
     if (detachThread) return;
     if (leftThread_.joinable()) leftThread_.join();
@@ -82,7 +80,7 @@ void Robot::stopGyro() {
         gyroThread_.join();
 }
 
-void Robot::moveStraightGyro(double speed, double distance, double angle) {
+void Robot::moveStraightGyro(double speed, double distance, double angle, double rampFraction) {
     stopGyro();
 
     double dir            = (distance < 0.0) ? -1.0 : 1.0;
@@ -106,8 +104,8 @@ void Robot::moveStraightGyro(double speed, double distance, double angle) {
         gyro_.update();
 
         double progress    = std::min(estimatedSteps / correctDistance, 1.0);
-        double speedFactor = (progress < RAMP_FRACTION)        ? progress / RAMP_FRACTION
-                           : (progress > 1.0 - RAMP_FRACTION)  ? (1.0 - progress) / RAMP_FRACTION
+        double speedFactor = (progress < rampFraction)        ? progress / rampFraction
+                           : (progress > 1.0 - rampFraction)  ? (1.0 - progress) / rampFraction
                                                                 : 1.0;
         double currentSpeed = std::max(speed * speedFactor, RAMP_START_SPEED);
 
@@ -131,7 +129,7 @@ void Robot::moveStraightGyro(double speed, double distance, double angle) {
     startGyro();
 }
 
-void Robot::turnGyro(double speed, double angle, bool detachThread) {
+void Robot::turnGyro(double speed, double angle, bool detachThread, double rampFraction) {
     stopGyro();
 
     double startAngle = gyro_.getAngleX(); // measure from current heading — no reset
@@ -148,8 +146,8 @@ void Robot::turnGyro(double speed, double angle, bool detachThread) {
         if (turned >= absAngle) break;
 
         double progress    = turned / absAngle;
-        double speedFactor = (progress < RAMP_FRACTION) ? progress / RAMP_FRACTION
-                           : (progress > 1.0 - RAMP_FRACTION) ? (1.0 - progress) / RAMP_FRACTION : 1.0;
+        double speedFactor = (progress < rampFraction) ? progress / rampFraction
+                           : (progress > 1.0 - rampFraction) ? (1.0 - progress) / rampFraction : 1.0;
         double currentSpeed = std::max(speed * speedFactor, RAMP_START_SPEED) * dir;
 
         left_.setContinuousSpeed(currentSpeed);
