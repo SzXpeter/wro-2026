@@ -1,0 +1,14 @@
+[Unit]
+Description=WRO 2026 Robot
+After=multi-user.target
+
+[Service]
+Type=simple
+User=jedlikpi
+WorkingDirectory=/home/jedlikpi/wro2026/python
+ExecStart=/usr/bin/python3 /home/jedlikpi/wro2026/python/main.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -34,7 +34,6 @@ class my_color_sensor:
         #     self.BP.log("Colorsensor ", self.port, " :", e)
         # return self.last_value
         value = self.BP.get_sensor(self.port)
-        self.BP.log(value) # type: ignore
         diff = self.black_value - self.white_value
         return int(((self.black_value - value) / diff) * 100)    
 

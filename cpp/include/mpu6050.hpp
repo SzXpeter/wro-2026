@@ -27,7 +27,7 @@ public:
     // Integrates gyro X-axis. Call in a tight loop or from a timer thread.
     void   update();
     double getAngleX()  const { return -angleX_; }
-    void   resetAngleX()      { angleX_ = 0.0; }
+    void   resetAngleX(double angle)      { angleX_ = angle; }
 
 private:
     int    fd_;

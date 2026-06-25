@@ -80,7 +80,7 @@ class Robot(BrickPi3):
         self._lib.wait_for_right_motor.restype = None
         self._lib.get_gyro_angle.argtypes      = []
         self._lib.get_gyro_angle.restype       = ctypes.c_double
-        self._lib.reset_gyro.argtypes          = []
+        self._lib.reset_gyro.argtypes          = [ctypes.c_double]
         self._lib.reset_gyro.restype           = None
 
     def _to_microsteps(self, cm: float) -> float:
@@ -129,22 +129,32 @@ class Robot(BrickPi3):
 
     def turn_left_gyro(self, speed, angle, slow=True):
         start_angle = self.gyro_angle()
+        start_time = time.time()
+        is_fastened = False
         if (start_angle > angle):
-            self.start_left_continuos(speed)
+            self.start_left_continuos(speed/2)
             angle_now = self.gyro_angle()
             while (angle_now > angle):
                 if (slow and abs(angle - angle_now) < 10):
-                    self.set_left_speed(speed/5)
+                    # self.set_left_speed(speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
+                if time.time() - start_time > 2 and not is_fastened:
+                    self.set_right_speed(speed)
+                    self.log("fastened")
+                    is_fastened = True
         else: 
-            self.start_left_continuos(-speed)
+            self.start_left_continuos(-speed/2)
             angle_now = self.gyro_angle()
             while (angle_now < angle): 
                 if (slow and abs(angle_now - angle) < 10):
-                    self.set_left_speed(-speed/5)
+                    # self.set_left_speed(-speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
+                if time.time() - start_time > 2 and not is_fastened:
+                    self.set_right_speed(speed)
+                    self.log("fastened")
+                    is_fastened = True
         self.stop_left_continuos()
     
     def turn_right_gyro(self, speed, angle, slow=True):
@@ -156,7 +166,7 @@ class Robot(BrickPi3):
             angle_now = self.gyro_angle()
             while (angle_now > angle):
                 if (slow and abs(angle - angle_now) < 10):
-                    self.set_right_speed(speed/5)
+                    # self.set_right_speed(speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
                 if time.time() - start_time > 2 and not is_fastened:
@@ -168,7 +178,7 @@ class Robot(BrickPi3):
             angle_now = self.gyro_angle()
             while (angle_now < angle): 
                 if (slow and abs(angle_now - angle) < 10):
-                    self.start_right_continuos(-speed/5)
+                    # self.start_right_continuos(-speed/5)
                     slow = False
                 angle_now = self.gyro_angle()
                 if time.time() - start_time > 2 and not is_fastened:
@@ -246,7 +256,7 @@ class Robot(BrickPi3):
         """Megvárja, míg a jobb motor befejezi a mozgást."""
         self._lib.wait_for_right_motor()
 
-    def turn_gyro(self, angle: float, speed: float = 10, detach: bool = False, rampFraction: float = .2) -> None:
+    def turn_gyro(self, angle: float, speed: float = 7.5, detach: bool = False, rampFraction: float = .2) -> None:
         """
         Forgatja a robotot giroszkóppal.
 
@@ -283,9 +293,9 @@ class Robot(BrickPi3):
         """Visszaadja a giroszkóp jelenlegi szögét fokban."""
         return self._lib.get_gyro_angle()
 
-    def reset_gyro(self) -> None:
+    def reset_gyro(self, angle: float = 0.0) -> None:
         """Nullázza a giroszkóp szögét."""
-        self._lib.reset_gyro()
+        self._lib.reset_gyro(angle)
 
     def log(self, *text):
         with open(self.log_file_name, "a") as f:

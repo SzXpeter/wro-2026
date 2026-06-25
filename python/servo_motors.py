@@ -1,4 +1,5 @@
 from encodings.punycode import T
+from unittest import mock
 
 import RPi.GPIO as GPIO # type: ignore
 import time, threading
@@ -43,24 +44,26 @@ def set_servo_motor(pwm: GPIO.PWM, angle: float, hold: bool):
 def set_slope(angle: float = 0, hold=False):
     set_servo_motor(slope_pwm, angle, hold)
 
-def set_lifter(angle = 0, hold=True):
+def set_lifter(angle: float = 0, hold=True):
     set_servo_motor(lifter_pwm, angle, hold)
 
 def set_release(angle = 98, hold=True):
     set_servo_motor(release_pwm, angle, hold)
 
-def set_vertical_motor(angle, speed= 1000):
+def set_vertical_motor(angle = 0, speed= 1000):
     my_robot.set_motor_limits(VERTICAL_MOTOR_PORT, 0, speed)
-    my_robot.set_motor_position(my_robot.PORT_A, angle)
+    my_robot.set_motor_position(my_robot.PORT_A, -angle)
 
 
 
 def get_cube_back():
-    set_slope(47.5)
-    time.sleep(0.4)
-    set_slope(32, hold=True)
+    set_slope(36.5, hold=True)
     time.sleep(0.25)
-    set_slope(27)
+    set_slope(32, hold=True)
+    time.sleep(0.5)
+    set_slope(25, hold=True)
+    time.sleep(0.5)
+    set_slope(25)
 
 def up_cubes():
     set_slope(45)
@@ -81,8 +84,7 @@ def lift_cube(down = True):
         threading.Thread(target=get_cube_back).start()
 
 def down_lifter():
-    set_lifter(0, hold=False)
-    set_lifter(-10, hold=False)
+    set_lifter(-10, hold=True)
 
 def down_cubes_slowly():
     for angle in range(23, 98, 10):

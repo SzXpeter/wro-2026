@@ -40,7 +40,7 @@ public:
     void   startGyro();
     void   stopGyro();
     double getGyroAngle();
-    void   resetGyro();
+    void   resetGyro(double angle);
 
 private:
     static constexpr double PID_KP         = 25;

@@ -65,7 +65,7 @@ extern "C" {
         return robot.getGyroAngle();
     }
 
-    void reset_gyro() {
-        robot.resetGyro();
+    void reset_gyro(double angle) {
+        robot.resetGyro(angle);
     }
 }

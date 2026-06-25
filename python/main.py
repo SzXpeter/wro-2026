@@ -7,18 +7,22 @@ my_robot.wait_for_button_press()
 # my_robot.calibrate()
 # time.sleep(1)
 
-# go_to_picture()
-# put_cubes_down(0)
+go_to_picture()
+pick_up_color_cubes(0, 1, 0)
+pick_up_color_cubes(1, 0, 1)
+pick_up_color_cubes(0, 2, 2)
+# pick_up_color_cubes(1, 2, 2)
+put_cubes_down(2)
 
 # release_all_to_grid()
 # picture_and_process()
 # time.sleep(1)
-pick_up_two_cubes(0)
+# pick_up_two_cubes(0)
 
 
 
 # time.sleep(0.5)
-# my_robot.wait_for_button_press()
+my_robot.wait_for_button_press()
 set_vertical_motor(0)
 time.sleep(2)
 # test_release_cubes()

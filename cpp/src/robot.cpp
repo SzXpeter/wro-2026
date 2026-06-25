@@ -70,8 +70,8 @@ double Robot::getGyroAngle() {
     return gyro_.getAngleX();
 }
 
-void Robot::resetGyro() {
-    gyro_.resetAngleX();
+void Robot::resetGyro(double angle) {
+    gyro_.resetAngleX(angle);
 }
 
 void Robot::stopGyro() {
