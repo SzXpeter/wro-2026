@@ -1,3 +1,4 @@
+from python.cube_test import best_order
 from task import *
 
 my_robot.wait_for_button_press()
@@ -6,13 +7,17 @@ my_robot.wait_for_button_press()
 # my_robot.reset_gyro()
 # my_robot.calibrate()
 # time.sleep(1)
-
+now_pos = 0
+order = best_order(COLOR_GRID)
 go_to_picture()
-pick_up_color_cubes(0, 1, 0)
-pick_up_color_cubes(1, 0, 1)
-pick_up_color_cubes(0, 2, 2)
+pick_up_color_cubes(now_pos, order[0], 0)
+now_pos = order[0]
+pick_up_color_cubes(now_pos, order[1], 1)
+now_pos = order[1]
+pick_up_color_cubes(now_pos, order[2], 2)
+now_pos = order[2]
 # pick_up_color_cubes(1, 2, 2)
-put_cubes_down(2)
+put_cubes_down(now_pos)
 
 # release_all_to_grid()
 # picture_and_process()

@@ -36,6 +36,34 @@ loaded = [
             ["sarga", "zold", "sarga", "zold"], 
             ["", "sarga", "kek", "kek"], 
         ]  
+def best_order(grid):
+    order = []
+    for i in range(3):
+        yellow_count = 0
+        blue_count = 0
+        green_count = 0
+        for j in range(3, 0, -1):
+            if grid[i][j] == "sarga":
+                yellow_count += 1
+            elif grid[i][j] == "kek":
+                blue_count += 1
+            elif grid[i][j] == "zold":
+                green_count += 1
+        sorted_counts = sorted([yellow_count, blue_count, green_count], reverse=True)
+        for i in range(3):
+            if sorted_counts[i] == yellow_count and not order.count(0):
+                order.append(0)   
+                break
+            elif sorted_counts[i] == blue_count and not order.count(1):
+                order.append(1)
+                break
+            elif sorted_counts[i] == green_count and not order.count(2):
+                order.append(2)
+                break
+
+        
+    return order
+
 def transform(old):
     new = [[], [], [], []]
 
@@ -185,6 +213,6 @@ def best_to_next(test, loaded, now_position):
 
 if __name__ == '__main__':
     print(int(1.6))
-    print(*test1, sep=',\n')
-    print(best_to_next(test1, loaded, 2))
+    print(*test5, sep=',\n')
+    print(best_order(test5))
 
